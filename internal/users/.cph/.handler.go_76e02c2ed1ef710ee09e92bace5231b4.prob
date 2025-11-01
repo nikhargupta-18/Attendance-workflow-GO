@@ -1,0 +1,1 @@
+{"name":"Local: handler","url":"c:\\Attendance workflow\\internal\\users\\handler.go","tests":[{"id":1761996733449,"input":"","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"c:\\Attendance workflow\\internal\\users\\handler.go","group":"local","local":true}
