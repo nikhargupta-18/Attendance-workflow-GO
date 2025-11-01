@@ -1,11 +1,13 @@
 package attendance
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"attendance-workflow/internal/dto"
+	"attendance-workflow/internal/notifications"
 	"attendance-workflow/pkg/db"
 
 	"github.com/gin-gonic/gin"
@@ -75,6 +77,22 @@ func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark attendance"})
 		return
 	}
+
+	// Get marker's name
+	var marker db.User
+	if err := h.DB.First(&marker, uid).Error; err == nil {
+		// Queue attendance notification
+		notifService := notifications.GetNotificationService()
+		if err := notifService.QueueAttendanceNotification(c.Request.Context(), notifications.AttendancePayload{
+			StudentID: attendance.StudentID,
+			Date:      attendance.Date,
+			Present:   attendance.Present,
+			MarkedBy:  marker.Name,
+		}); err != nil {
+			log.Printf("Failed to queue attendance notification: %v", err)
+		}
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Attendance marked successfully", "data": attendance})
 }
 

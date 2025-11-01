@@ -9,8 +9,8 @@ import (
 	"attendance-workflow/internal/users"
 
 	"github.com/gin-gonic/gin"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRoutes() *gin.Engine {
@@ -106,9 +106,9 @@ func SetupRoutes() *gin.Engine {
 			analyticsGroup.GET("/leave-breakdown", analyticsHandler.GetLeaveBreakdown)
 			analyticsGroup.GET("/department", analyticsHandler.GetDepartmentStats)
 			analyticsGroup.GET("/absentees", analyticsHandler.GetFrequentAbsentees)
+			analyticsGroup.GET("/summary", analyticsHandler.GetSummary)
 		}
 	}
 
 	return router
 }
-

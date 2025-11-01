@@ -55,5 +55,7 @@ func AutoMigrate() error {
 		&LeaveRequest{},
 		&Attendance{},
 		&Notification{},
+		&AnalyticsSummary{},
+		&EmailNotification{},
 	)
 }

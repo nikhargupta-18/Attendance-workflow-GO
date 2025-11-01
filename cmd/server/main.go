@@ -23,11 +23,12 @@ import (
 	"log"
 	"os"
 
+	docs "attendance-workflow/docs"
 	"attendance-workflow/internal/api"
 	"attendance-workflow/internal/auth"
+	"attendance-workflow/internal/notifications"
 	"attendance-workflow/pkg/config"
 	"attendance-workflow/pkg/db"
-	docs "attendance-workflow/docs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,6 +52,19 @@ func main() {
 
 	// Create default admin user if not exists
 	createDefaultAdmin()
+
+	// Initialize notification service
+	notifService := notifications.GetNotificationService()
+	defer notifService.Stop()
+
+	// Start cron service
+	cronService := notifications.NewCronService()
+	go func() {
+		if err := cronService.Start(); err != nil {
+			log.Printf("Failed to start cron service: %v", err)
+		}
+	}()
+	defer cronService.Stop()
 
 	// Setup routes
 	router := api.SetupRoutes()

@@ -1,15 +1,46 @@
 # Campus Leave & Attendance Management System
 
-A backend system to automate leave and attendance workflows for universities and hostels.
+A modern, scalable REST API for managing student attendance and leave requests in educational institutions. Built with Go, PostgreSQL, and Redis.
 
-## Features
+## Key Features
 
-- JWT Authentication with role-based access control
-- Leave Management - Apply, approve, and track requests
-- Attendance Tracking - Daily monitoring and statistics
-- Notifications - Real-time status updates
-- Analytics Dashboard - Comprehensive reports
-- User Roles: Admin, Faculty, Warden, Student
+### 👥 User Management
+- Role-based access (Admin, Faculty, Warden, Student)
+- Secure JWT authentication
+- Profile management
+
+### 📊 Attendance System
+- Real-time attendance marking
+- Individual & department tracking
+- Historical records
+- Absence notifications
+
+### 📝 Leave Management
+- Multiple leave types (Medical, Personal, Emergency)
+- Multi-level approval workflow
+- Status tracking & notifications
+- Leave history
+
+### 📈 Analytics Dashboard
+- Department-wise attendance stats
+- Leave analysis and trends
+- Absentee monitoring
+- Monthly summary reports
+
+### 🔔 Smart Notifications
+- Real-time updates via WebSocket
+- Async email notifications
+- Scheduled reminders
+- Notification center
+
+## Tech Stack
+
+- **Backend**: Go 1.21 (Gin Framework)
+- **Database**: PostgreSQL
+- **Cache/Queue**: Redis
+- **Documentation**: Swagger
+- **Authentication**: JWT
+- **Container**: Docker
 
 ## Demo Accounts and Tokens
 
@@ -296,39 +327,78 @@ curl -X GET http://localhost:8080/api/v1/notifications/my \
 Create `.env` file:
 
 ```env
+# Database Configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=attendance_user
 DB_PASSWORD=attendance_pass
 DB_NAME=attendance_db
+DB_SSL_MODE=disable
 
+# Server Configuration
 PORT=8080
 GIN_MODE=debug
 
+# Authentication
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRY=24h
+
+# Redis Configuration
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Email Configuration (Optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-specific-password
+SMTP_FROM=noreply@university.edu
 ```
 
 ## Project Structure
 
 ```
 attendance-workflow/
-├── cmd/server/          # Application entry point
+├── cmd/
+│   └── server/          # Application entrypoint
 ├── internal/
-│   ├── api/             # API routes
-│   ├── auth/            # JWT authentication
-│   ├── users/           # User management
-│   ├── leaves/          # Leave management
-│   ├── attendance/      # Attendance tracking
-│   ├── notifications/   # Notifications
-│   ├── analytics/       # Analytics
-│   └── dto/             # Data transfer objects
+│   ├── analytics/       # Analytics & reporting
+│   ├── api/            # Route definitions
+│   ├── attendance/     # Attendance management
+│   ├── auth/           # Authentication & authorization
+│   ├── dto/            # Data transfer objects
+│   ├── leaves/         # Leave management
+│   ├── notifications/  # Notification system
+│   └── users/          # User management
 ├── pkg/
-│   ├── config/          # Configuration
-│   └── db/              # Database models
-├── docker-compose.yml
-├── Dockerfile
-└── go.mod
+│   ├── config/         # Configuration management
+│   └── db/            # Database models & connection
+├── scripts/           # Database scripts
+├── docs/             # Swagger documentation
+├── docker-compose.yml # Container orchestration
+├── Dockerfile        # API container build
+├── go.mod           # Dependencies
+└── README.md        # Documentation
+```
+
+## Quick Commands
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Reset database with demo data
+go run scripts/reset_db.go
+
+# View API logs
+docker-compose logs -f api
+
+# Access Swagger UI
+http://localhost:8080/swagger/index.html
+
+# Health check
+curl http://localhost:8080/health
 ```
 
 ## Tech Stack

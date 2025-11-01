@@ -1,10 +1,12 @@
 package leaves
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
 	"attendance-workflow/internal/dto"
+	"attendance-workflow/internal/notifications"
 	"attendance-workflow/pkg/db"
 
 	"github.com/gin-gonic/gin"
@@ -239,15 +241,17 @@ func (h *LeaveHandler) ApproveLeave(c *gin.Context) {
 		return
 	}
 
-	// Create notification
-	notification := db.Notification{
-		UserID:  leave.StudentID,
-		Type:    "leave_status_change",
-		Title:   "Leave Request " + string(leave.Status),
-		Message: "Your leave request has been " + string(leave.Status),
-	}
-	if err := h.DB.Create(&notification).Error; err != nil {
+	// Queue async notification
+	notifService := notifications.GetNotificationService()
+	if err := notifService.QueueLeaveStatusNotification(c.Request.Context(), notifications.LeaveStatusUpdatePayload{
+		LeaveID:    uint(id),
+		StudentID:  leave.StudentID,
+		Status:     string(leave.Status),
+		ApprovedBy: req.Remarks,
+		Remarks:    req.Remarks,
+	}); err != nil {
 		// Log error but don't fail the request
+		log.Printf("Failed to queue notification: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
