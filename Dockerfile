@@ -1,9 +1,12 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
+# Add git and build dependencies
+RUN apk add --no-cache git make build-base
+
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod download && go mod verify
 
 COPY . .
 
@@ -14,6 +17,7 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/attendance-api .
+COPY .env .
 
 EXPOSE 8080
 
