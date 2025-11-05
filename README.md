@@ -95,27 +95,41 @@ The reset script will:
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Development Setup (Recommended)
 
 ```bash
-# Start all services
+# Start required services (DB and Redis)
+docker-compose up -d postgres redis
+
+# Install dependencies
+go mod tidy
+go mod download
+
+# Run application locally
+go run cmd/server/main.go
+```
+
+### Production Setup (Using Docker)
+
+```bash
+# Start all services including API
 docker-compose up -d
 
 # View logs
 docker-compose logs -f api
 ```
 
-### Local Development
+### Local Development with Docker API
+
+If you want to run the API in Docker but develop other components:
 
 ```bash
-# Start database
-docker-compose up -d postgres
+# Start all services
+docker-compose up -d
 
-# Install dependencies
-go mod tidy
-
-# Run server
-go run cmd/server/main.go
+# To modify code and run locally later:
+docker-compose stop api  # Stop just the API container
+go run cmd/server/main.go  # Run locally for development
 ```
 
 **Default Admin Credentials:**
@@ -424,20 +438,64 @@ make clean          # Clean build files
 
 ## Troubleshooting
 
-**Port already in use:**
+### Common Issues
+
+**Port 8080 already in use:**
+1. If running everything in Docker:
 ```bash
+# Check running containers
+docker-compose ps
+
+# Stop only the API container
+docker-compose stop api
+
+# Then run locally
+go run cmd/server/main.go
+```
+
+2. If running locally:
+```bash
+# Option 1: Change port in .env
 PORT=8081 go run cmd/server/main.go
+
+# Option 2: Find and stop the process using port 8080
+# Windows (PowerShell as Admin):
+Get-NetTCPConnection -LocalPort 8080 | Select-Object -Property OwningProcess
+Stop-Process -Id <ProcessId> -Force
 ```
 
 **Database connection error:**
 ```bash
+# Check service status
 docker-compose ps
+
+# Check database logs
 docker-compose logs postgres
+
+# Verify database connection details in .env
+cat .env | grep DB_
+```
+
+**Redis connection issues:**
+```bash
+# Check Redis status
+docker-compose ps redis
+
+# Check Redis logs
+docker-compose logs redis
+
+# Verify Redis connection in .env
+cat .env | grep REDIS_
 ```
 
 **Module errors:**
 ```bash
+# Update and download dependencies
 go mod tidy
+go mod download
+
+# If issues persist, try cleaning go cache
+go clean -modcache
 go mod download
 ```
 

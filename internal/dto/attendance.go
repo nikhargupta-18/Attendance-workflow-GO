@@ -8,3 +8,4 @@ type MarkAttendanceRequest struct {
 	Present   bool      `json:"present"`
 }
 
+

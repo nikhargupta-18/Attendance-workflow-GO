@@ -1,18 +1,57 @@
 # Quick Start Guide
 
+## Prerequisites
+- Go 1.16 or higher
+- Docker and Docker Compose
+- Make (optional)
+
 ## Get Started
 
-### Step 1: Start the Database
+### Step 1: Set Up Environment
 ```bash
-docker-compose up -d postgres
+# Copy example environment file (if not exists)
+cp .env.example .env
+
+# Install dependencies
+go mod download
+go mod tidy
 ```
 
-### Step 2: Run the Application
+### Step 2: Start the Services
 ```bash
+# Start only database and redis (recommended for development)
+docker-compose up -d postgres redis
+
+# Or start all services including API (alternative)
+docker-compose up -d
+```
+
+### Step 3: Run the Application
+Choose ONE of these methods:
+
+#### A. Run Locally (Recommended for Development)
+```bash
+# First, ensure the API container is not running
+docker-compose stop api
+
+# Then run the application locally
 go run cmd/server/main.go
 ```
 
-### Step 3: Test the API
+#### B. Run in Docker (Alternative)
+```bash
+# Run everything in Docker
+docker-compose up -d
+```
+
+### Step 4: Verify Services
+The following endpoints should be available:
+
+- API: http://localhost:8080
+- Health Check: http://localhost:8080/health
+- Swagger UI: http://localhost:8080/swagger/index.html
+
+### Step 5: Test the API
 
 #### Login as Admin
 ```bash
@@ -50,19 +89,46 @@ See [README.md](README.md) for complete API documentation.
 
 ## Troubleshooting
 
-**Port already in use?**
+### Common Issues
+
+**Port 8080 already in use?**
+1. Check if the API container is running:
 ```bash
-# Change PORT in .env file
+docker-compose ps
+```
+2. Stop the API container if running:
+```bash
+docker-compose stop api
+```
+3. Or change the port in .env:
+```bash
 PORT=8081
 ```
 
 **Database connection error?**
+1. Verify services are running:
 ```bash
 docker-compose ps
+```
+2. Check logs:
+```bash
+docker-compose logs postgres
+docker-compose logs redis
 ```
 
 **Module not found?**
 ```bash
 go mod tidy
+go mod download
+```
+
+**Redis connection issues?**
+1. Verify Redis is running:
+```bash
+docker-compose ps redis
+```
+2. Check Redis logs:
+```bash
+docker-compose logs redis
 ```
 

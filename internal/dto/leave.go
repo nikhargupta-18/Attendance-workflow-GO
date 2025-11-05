@@ -14,3 +14,4 @@ type ApproveLeaveRequest struct {
 	Remarks  string `json:"remarks,omitempty"`
 }
 
+
