@@ -55,14 +55,14 @@ func (h *AttendanceHandler) MarkAttendance(c *gin.Context) {
 
 	attendance := db.Attendance{
 		StudentID: req.StudentID,
-		Date:      req.Date,
+		Date:      req.Date.Time,
 		Present:   req.Present,
 		MarkedBy:  uint(uid),
 	}
 
 	// Check if attendance already marked
 	var existing db.Attendance
-	if err := h.DB.Where("student_id = ? AND date = ?", req.StudentID, req.Date).First(&existing).Error; err == nil {
+	if err := h.DB.Where("student_id = ? AND date = ?", req.StudentID, req.Date.Time).First(&existing).Error; err == nil {
 		// Update existing
 		existing.Present = req.Present
 		if err := h.DB.Save(&existing).Error; err != nil {

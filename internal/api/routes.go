@@ -31,6 +31,19 @@ func SetupRoutes() *gin.Engine {
 		c.Next()
 	})
 
+	// Root endpoint
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Attendance Workflow API",
+			"version": "1.0",
+			"endpoints": gin.H{
+				"health":  "/health",
+				"swagger": "/swagger/index.html",
+				"api":     "/api/v1",
+			},
+		})
+	})
+
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})

@@ -1,502 +1,233 @@
-# Campus Leave & Attendance Management System
+# Attendance Workflow API
 
-A modern, scalable REST API for managing student attendance and leave requests in educational institutions. Built with Go, PostgreSQL, and Redis.
+RESTful API for managing student attendance and leave requests. Built with Go, PostgreSQL, and Docker.
 
-## Key Features
+## Features
 
-### 👥 User Management
-- Role-based access (Admin, Faculty, Warden, Student)
-- Secure JWT authentication
-- Profile management
-
-### 📊 Attendance System
-- Real-time attendance marking
-- Individual & department tracking
-- Historical records
-- Absence notifications
-
-### 📝 Leave Management
-- Multiple leave types (Medical, Personal, Emergency)
-- Multi-level approval workflow
-- Status tracking & notifications
-- Leave history
-
-### 📈 Analytics Dashboard
-- Department-wise attendance stats
-- Leave analysis and trends
-- Absentee monitoring
-- Monthly summary reports
-
-### 🔔 Smart Notifications
-- Real-time updates via WebSocket
-- Async email notifications
-- Scheduled reminders
-- Notification center
-
-## Tech Stack
-
-- **Backend**: Go 1.21 (Gin Framework)
-- **Database**: PostgreSQL
-- **Cache/Queue**: Redis
-- **Documentation**: Swagger
-- **Authentication**: JWT
-- **Container**: Docker
-
-## Demo Accounts and Tokens
-
-For testing and demonstration purposes, you can use the following accounts. These accounts are created automatically when you run the database reset script (`go run scripts/reset_db.go`).
-
-### Demo Credentials
-
-1. **Admin User**
-   - Name: admin
-   - Email: admin@college.edu
-   - Password: admin123
-
-2. **Warden**
-   - Name: warden
-   - Email: warden@college.edu
-   - Password: warden123
-
-3. **Faculty**
-   - Name: faculty
-   - Email: faculty@college.edu
-   - Password: faculty123
-
-4. **Student 1**
-   - Name: stud1
-   - Email: stud1@college.edu
-   - Password: student123
-
-5. **Student 2**
-   - Name: stud2
-   - Email: stud2@college.edu
-   - Password: student123
-
-Note: Bearer tokens for all users are automatically generated when you run the database reset script. Each token is valid for 24 hours.
-
-### Usage
-
-1. Reset the database and get fresh tokens:
-```bash
-go run scripts/reset_db.go
-```
-
-2. Use the generated tokens in API requests:
-```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/users/profile
-```
-
-The reset script will:
-- Reset the database with fresh demo data
-- Create all demo users with their roles
-- Generate and display new bearer tokens for each user
-- Tokens are valid for 24 hours from generation time
+- JWT Authentication with role-based access (Admin, Faculty, Warden, Student)
+- Attendance tracking and marking
+- Leave request management with approval workflow
+- Notifications system
+- Analytics dashboard
+- Swagger API documentation
 
 ## Quick Start
 
-### Development Setup (Recommended)
+### 1. Start Database
 
 ```bash
-# Start required services (DB and Redis)
-docker-compose up -d postgres redis
+docker-compose up -d postgres
+```
 
-# Install dependencies
+### 2. Run Server
+
+```bash
 go mod tidy
-go mod download
-
-# Run application locally
 go run cmd/server/main.go
 ```
 
-### Production Setup (Using Docker)
+Server runs on `http://localhost:8080`
+
+**Default Admin:**
+- Email: `admin@university.edu`
+- Password: `admin123`
+
+## Getting Bearer Tokens
+
+### ⭐ Recommended: Use Swagger UI (Easiest)
+
+1. **Open Swagger:** http://localhost:8080/swagger/index.html
+2. **Find `POST /api/v1/auth/login`** and click "Try it out"
+3. **Enter credentials:**
+   ```json
+   {
+     "email": "admin@university.edu",
+     "password": "admin123"
+   }
+   ```
+4. **Click "Execute"** - Copy the `token` from response
+5. **Click "Authorize" button** (🔒 top right), paste token, click "Authorize"
+6. **Now you can test all endpoints** directly in Swagger!
+
+### Alternative: PowerShell (Windows)
+
+**Login:**
+```powershell
+$body = '{"email":"admin@university.edu","password":"admin123"}'
+$response = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/login" `
+  -Method POST -ContentType "application/json" -Body $body
+$token = $response.token
+Write-Host "Token: $token"
+```
+
+**Use Token:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" `
+  -Headers @{"Authorization"="Bearer $token"}
+```
+
+### Alternative: curl (Linux/Mac)
 
 ```bash
-# Start all services including API
-docker-compose up -d
+# Login
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@university.edu","password":"admin123"}'
 
-# View logs
-docker-compose logs -f api
+# Use token
+curl -X GET http://localhost:8080/api/v1/users \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
-### Local Development with Docker API
+**Note:** Don't paste URLs in browser - they only do GET requests. Use Swagger UI or the commands above.
 
-If you want to run the API in Docker but develop other components:
-
-```bash
-# Start all services
-docker-compose up -d
-
-# To modify code and run locally later:
-docker-compose stop api  # Stop just the API container
-go run cmd/server/main.go  # Run locally for development
-```
-
-**Default Admin Credentials:**
-- Email: admin@university.edu
-- Password: admin123
-
-## API Documentation (Swagger)
-
-Once the server is running, access the interactive Swagger UI:
-
-```
-http://localhost:8080/swagger/index.html
-```
-
-**Features:**
-- View all API endpoints organized by tags
-- Try out endpoints directly from the browser
-- See request/response schemas
-- Authenticate using Bearer token (click "Authorize" button)
-
-**To regenerate docs after adding annotations:**
-```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-swag init -g cmd/server/main.go -o docs
-```
 
 ## API Endpoints
 
+**Base URL:** `/api/v1`
+
 ### Authentication
 
-**Register**
-```http
-POST /api/v1/auth/register
-Content-Type: application/json
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login and get token
 
-{
-  "name": "John Doe",
-  "email": "john@student.edu",
-  "password": "password123",
-  "role": "student",
-  "dept": "Computer Science"
-}
-```
+### Users (Protected)
 
-**Login**
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
+- `GET /users` - List users (Admin only, paginated)
+- `GET /users/:id` - Get user by ID
+- `PUT /users/:id` - Update user
+- `DELETE /users/:id` - Delete user (Admin only)
 
-{
-  "email": "admin@university.edu",
-  "password": "admin123"
-}
-```
+**Query params:** `page`, `limit`, `role`, `dept`
 
-### User Management (Admin Only)
+### Leaves (Protected)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/users` | List all users (with pagination, role, dept filters) |
-| GET | `/api/v1/users/:id` | Get user by ID |
-| PUT | `/api/v1/users/:id` | Update user |
-| DELETE | `/api/v1/users/:id` | Delete user |
+- `POST /leaves/apply` - Apply for leave (Student)
+- `GET /leaves/my` - Get my leaves
+- `GET /leaves/pending` - Get pending leaves (Faculty/Warden/Admin)
+- `PUT /leaves/:id/approve` - Approve/reject leave (Faculty/Warden/Admin)
+- `GET /leaves` - Get all leaves (Admin only)
+- `DELETE /leaves/:id` - Delete leave (Admin only)
 
-### Leave Management
+**Leave types:** `Medical`, `Personal`, `Emergency`, `Other`
 
-**Apply for Leave (Student)**
-```http
-POST /api/v1/leaves/apply
-Authorization: Bearer <token>
-Content-Type: application/json
+**Date format:** Use `YYYY-MM-DD` (e.g., `2025-11-05`)
 
-{
-  "leave_type": "Medical",
-  "reason": "Doctor appointment",
-  "start_date": "2025-10-25T00:00:00Z",
-  "end_date": "2025-10-25T00:00:00Z"
-}
-```
+### Attendance (Protected)
 
-**Leave Types:** Medical, Personal, Emergency, Other
+- `POST /attendance/mark` - Mark attendance
+- `GET /attendance/student/:id` - Get student attendance
+- `GET /attendance/my` - Get my attendance (Student)
+- `GET /attendance/daily` - Get daily attendance
 
-**Other Endpoints:**
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| GET | `/api/v1/leaves/my` | Get my leave requests | All |
-| GET | `/api/v1/leaves/pending` | Get pending leaves | Faculty/Warden/Admin |
-| PUT | `/api/v1/leaves/:id/approve` | Approve/reject leave | Faculty/Warden/Admin |
-| GET | `/api/v1/leaves` | Get all leaves | Admin |
-| DELETE | `/api/v1/leaves/:id` | Delete leave | Admin |
+**Query params:** `start_date`, `end_date`, `date` (all in `YYYY-MM-DD` format)
 
-**Approve/Reject Leave**
-```http
-PUT /api/v1/leaves/:id/approve
-Authorization: Bearer <token>
-Content-Type: application/json
+**Date format for JSON:** Use `YYYY-MM-DD` (e.g., `2025-11-05`)
 
-{
-  "approved": true,
-  "remarks": "Approved"
-}
-```
+### Notifications (Protected)
 
-### Attendance Tracking
-
-**Mark Attendance**
-```http
-POST /api/v1/attendance/mark
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "student_id": 42,
-  "date": "2025-10-22T00:00:00Z",
-  "present": true
-}
-```
-
-**Get Student Attendance**
-```http
-GET /api/v1/attendance/student/:id?start_date=2025-01-01&end_date=2025-12-31
-Authorization: Bearer <token>
-```
-
-**Response includes:**
-- Attendance records
-- Statistics (present_days, total_days, attendance_percentage)
-
-**Other Endpoints:**
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| GET | `/api/v1/attendance/my` | Get my attendance | Student |
-| GET | `/api/v1/attendance/daily?date=2025-10-22` | Get daily attendance | All |
-
-### Notifications
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/notifications/my` | Get my notifications |
-| PUT | `/api/v1/notifications/:id/read` | Mark as read |
-| GET | `/api/v1/notifications/unread-count` | Get unread count |
+- `GET /notifications/my` - Get my notifications
+- `PUT /notifications/:id/read` - Mark as read
+- `GET /notifications/unread-count` - Get unread count
 
 ### Analytics (Admin Only)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/analytics/dashboard` | Dashboard statistics |
-| GET | `/api/v1/analytics/leave-breakdown` | Leave breakdown by type |
-| GET | `/api/v1/analytics/department?dept=CS` | Department statistics |
-| GET | `/api/v1/analytics/absentees` | Frequent absentees |
+- `GET /analytics/dashboard` - Dashboard stats
+- `GET /analytics/leave-breakdown` - Leave breakdown
+- `GET /analytics/department?dept=CS` - Department stats
+- `GET /analytics/absentees` - Frequent absentees
 
 ### Health Check
 
-```http
-GET /health
-```
-
-## Complete Example Workflow
-
-**1. Register a Student**
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe",
-    "email": "john@student.edu",
-    "password": "password123",
-    "role": "student",
-    "dept": "Computer Science"
-  }'
-```
-
-**2. Login**
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"john@student.edu","password":"password123"}'
-```
-
-**3. Apply for Leave**
-```bash
-curl -X POST http://localhost:8080/api/v1/leaves/apply \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{
-    "leave_type": "Medical",
-    "reason": "Doctor appointment",
-    "start_date": "2025-10-25T00:00:00Z",
-    "end_date": "2025-10-25T00:00:00Z"
-  }'
-```
-
-**4. Faculty Approves Leave**
-```bash
-curl -X PUT http://localhost:8080/api/v1/leaves/1/approve \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <faculty-token>" \
-  -d '{"approved": true, "remarks": "Approved"}'
-```
-
-**5. Check Notifications**
-```bash
-curl -X GET http://localhost:8080/api/v1/notifications/my \
-  -H "Authorization: Bearer <token>"
-```
+- `GET /health` - Server health status
 
 ## Configuration
 
-Create `.env` file:
+Create `.env` file (optional - defaults provided):
 
 ```env
-# Database Configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=attendance_user
 DB_PASSWORD=attendance_pass
 DB_NAME=attendance_db
-DB_SSL_MODE=disable
-
-# Server Configuration
 PORT=8080
-GIN_MODE=debug
-
-# Authentication
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRY=24h
+```
 
-# Redis Configuration
-REDIS_ADDR=localhost:6379
-REDIS_PASSWORD=
-REDIS_DB=0
+## Troubleshooting
 
-# Email Configuration (Optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-specific-password
-SMTP_FROM=noreply@university.edu
+**Port 8080 in use:**
+```bash
+PORT=8081 go run cmd/server/main.go
+```
+
+**Database connection error:**
+```bash
+docker-compose up -d postgres
+docker-compose logs postgres
+```
+
+**Swagger shows "No operations":**
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+swag init -g cmd/server/main.go -o docs
+```
+
+**Getting 404 on login endpoint:**
+- Don't paste the URL in browser (browsers only do GET requests)
+- Use Swagger UI: http://localhost:8080/swagger/index.html
+- Or use PowerShell/curl commands shown above
+
+**Module errors:**
+```bash
+go mod tidy
+go mod download
 ```
 
 ## Project Structure
 
 ```
 attendance-workflow/
-├── cmd/
-│   └── server/          # Application entrypoint
+├── cmd/server/       # Entry point
 ├── internal/
-│   ├── analytics/       # Analytics & reporting
-│   ├── api/            # Route definitions
-│   ├── attendance/     # Attendance management
-│   ├── auth/           # Authentication & authorization
-│   ├── dto/            # Data transfer objects
-│   ├── leaves/         # Leave management
-│   ├── notifications/  # Notification system
-│   └── users/          # User management
+│   ├── api/         # Routes
+│   ├── auth/        # Authentication
+│   ├── users/       # User handlers
+│   ├── leaves/      # Leave handlers
+│   ├── attendance/  # Attendance handlers
+│   ├── notifications/
+│   └── analytics/
 ├── pkg/
-│   ├── config/         # Configuration management
-│   └── db/            # Database models & connection
-├── scripts/           # Database scripts
-├── docs/             # Swagger documentation
-├── docker-compose.yml # Container orchestration
-├── Dockerfile        # API container build
-├── go.mod           # Dependencies
-└── README.md        # Documentation
+│   ├── config/      # Configuration
+│   └── db/          # Database models
+└── docs/            # Swagger docs
 ```
 
-## Quick Commands
+## Example Workflow
 
-```bash
-# Start all services
-docker-compose up -d
+**Using Swagger UI (Recommended):**
+1. Open http://localhost:8080/swagger/index.html
+2. Login via `POST /api/v1/auth/login`
+3. Click "Authorize" and paste token
+4. Test endpoints directly in Swagger
 
-# Reset database with demo data
-go run scripts/reset_db.go
+**Using PowerShell:**
+```powershell
+# Login and get token
+$body = '{"email":"admin@university.edu","password":"admin123"}'
+$response = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/login" `
+  -Method POST -ContentType "application/json" -Body $body
+$token = $response.token
 
-# View API logs
-docker-compose logs -f api
-
-# Access Swagger UI
-http://localhost:8080/swagger/index.html
-
-# Health check
-curl http://localhost:8080/health
+# Use token
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" `
+  -Headers @{"Authorization"="Bearer $token"}
 ```
 
-## Tech Stack
+## Links
 
-- Language: Go 1.21
-- Framework: Gin
-- ORM: GORM
-- Database: PostgreSQL
-- Authentication: JWT
-- Containerization: Docker
-
-## Commands
-
-```bash
-# Using Makefile
-make build          # Build application
-make run            # Run application
-make docker-up      # Start Docker services
-make docker-down    # Stop Docker services
-make docker-logs    # View Docker logs
-make clean          # Clean build files
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Port 8080 already in use:**
-1. If running everything in Docker:
-```bash
-# Check running containers
-docker-compose ps
-
-# Stop only the API container
-docker-compose stop api
-
-# Then run locally
-go run cmd/server/main.go
-```
-
-2. If running locally:
-```bash
-# Option 1: Change port in .env
-PORT=8081 go run cmd/server/main.go
-
-# Option 2: Find and stop the process using port 8080
-# Windows (PowerShell as Admin):
-Get-NetTCPConnection -LocalPort 8080 | Select-Object -Property OwningProcess
-Stop-Process -Id <ProcessId> -Force
-```
-
-**Database connection error:**
-```bash
-# Check service status
-docker-compose ps
-
-# Check database logs
-docker-compose logs postgres
-
-# Verify database connection details in .env
-cat .env | grep DB_
-```
-
-**Redis connection issues:**
-```bash
-# Check Redis status
-docker-compose ps redis
-
-# Check Redis logs
-docker-compose logs redis
-
-# Verify Redis connection in .env
-cat .env | grep REDIS_
-```
-
-**Module errors:**
-```bash
-# Update and download dependencies
-go mod tidy
-go mod download
-
-# If issues persist, try cleaning go cache
-go clean -modcache
-go mod download
-```
-
-
+- **API:** http://localhost:8080
+- **Swagger:** http://localhost:8080/swagger/index.html
+- **Health:** http://localhost:8080/health

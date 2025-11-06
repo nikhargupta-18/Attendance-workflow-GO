@@ -45,7 +45,7 @@ func (h *LeaveHandler) ApplyLeave(c *gin.Context) {
 		return
 	}
 
-	if req.EndDate.Before(req.StartDate) {
+	if req.EndDate.Time.Before(req.StartDate.Time) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "End date cannot be before start date"})
 		return
 	}
@@ -60,8 +60,8 @@ func (h *LeaveHandler) ApplyLeave(c *gin.Context) {
 		StudentID: uid,
 		LeaveType: db.LeaveType(req.LeaveType),
 		Reason:    req.Reason,
-		StartDate: req.StartDate,
-		EndDate:   req.EndDate,
+		StartDate: req.StartDate.Time,
+		EndDate:   req.EndDate.Time,
 		Status:    db.StatusPending,
 	}
 
